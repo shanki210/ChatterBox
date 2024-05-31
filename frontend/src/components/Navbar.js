@@ -31,7 +31,14 @@ const Navbar = () => {
   const navigate = useNavigate()
   const toast = useToast();
 
-  const {user} = ChatState();
+  const {
+    setSelectedChat,
+    user,
+    notification,
+    setNotification,
+    chats,
+    setChats,
+  } = ChatState();
   console.log(user)
 
   const handleLogout = ()=>{
@@ -74,9 +81,34 @@ const Navbar = () => {
     }
 
   }
-  const handleClick=()=>{
+  const handleClick = async (userId) => {
+    console.log(userId);
 
-  }
+    try {
+      setLoading(true);
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.post(`/api/chat`, { userId }, config);
+
+      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
+      setSelectedChat(data);
+      setLoading(false);
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error fetching the chat",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    }
+  };
 
   return (
     <div>
@@ -92,7 +124,7 @@ const Navbar = () => {
         <Tooltip label="Search">
           <Button  ref={btnRef}  onClick={onOpen}>
             <SearchIcon/>
-            <Text d={{ base: "none", md: "flex" }} px={4}>Search</Text>
+            <Text display={{ base: "none", md: "flex" }} px={4}>Search</Text>
           </Button>
         </Tooltip>
 
@@ -146,7 +178,7 @@ const Navbar = () => {
                 <div><ChatLoader/></div>
               ):(
                 searchResult?.map((user)=>(
-                  <UserList key={user._id} user={user} handleFunction={handleClick} />
+                  <UserList key={user._id} user={user} handleFunction={()=>handleClick(user._id)} />
                 ))
               )
             }
